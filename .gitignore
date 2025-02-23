@@ -1,0 +1,14 @@
+# Data directory
+data/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+
+# Ignore all dot files/folders
+.*
+!.gitignore
