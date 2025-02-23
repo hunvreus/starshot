@@ -12,3 +12,4 @@ venv/
 # Ignore all dot files/folders
 .*
 !.gitignore
+!.env.example

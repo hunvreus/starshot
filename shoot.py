@@ -14,7 +14,7 @@ token = os.getenv('GITHUB_TOKEN')
 # Headers for authentication
 headers = {
     'Authorization': f'token {token}',
-    'Accept': 'application/vnd.github.v3+json',
+    'Accept': 'application/vnd.github.v3.star+json', # This gets us starring timestamps
 }
 
 # Setup retry strategy for requests
@@ -31,24 +31,35 @@ def dot_spinner():
             yield f"\rProcessing{'.' * num_dots}" + ' ' * (20 - num_dots)
 
 def get_stargazers(repo, spin):
-    api_url = f'https://api.github.com/repos/{repo}/stargazers?direction=desc'
+    api_url = f'https://api.github.com/repos/{repo}/stargazers'  # Removed direction=desc as it's not needed
     stargazers = []
     with requests.Session() as session:
         session.headers.update(headers)
         session.mount("https://", adapter)
         while True:
             response = session.get(api_url)
-            sys.stdout.write(next(spin))  # Update the spinner
+            sys.stdout.write(next(spin))
             sys.stdout.flush()
+            
+            if response.status_code != 200:
+                print(f"\nError: API returned status code {response.status_code}")
+                print(f"Response: {response.text}")
+                break
+                
             json_response = response.json()
-            if isinstance(json_response, list):
-                stargazers.extend(json_response)
-            else:
+            if not json_response:  # Empty response
                 break
-            if 'next' in response.links:
-                api_url = response.links['next']['url']
-            else:
+                
+            for item in json_response:
+                stargazers.append({
+                    'user': item['user'],
+                    'starred_at': item['starred_at']
+                })
+                
+            if 'next' not in response.links:
                 break
+            api_url = response.links['next']['url']
+            
     return stargazers
 
 def get_user_details(username):
@@ -65,13 +76,18 @@ def update_csv(filename, new_stargazers, spin):
     
     # Collect new data
     new_data = []
-    for user in new_stargazers:
-        if 'login' in user:
-            if spin: sys.stdout.write(next(spin))  # Update the spinner
+    total = len(new_stargazers)
+    for index, star_data in enumerate(new_stargazers, 1):
+        if 'user' in star_data and 'login' in star_data['user']:
+            # Show progress as percentage
+            progress = f"\rFetching user profiles: {index}/{total} ({(index/total)*100:.1f}%)"
+            sys.stdout.write(progress)
             sys.stdout.flush()
-            user_details = get_user_details(user['login'])
+            
+            user_details = get_user_details(star_data['user']['login'])
             if user_details:
                 new_data.append({
+                    'starred_at': star_data['starred_at'],
                     'id': user_details.get('id'),
                     'login': user_details.get('login'),
                     'name': user_details.get('name'),
@@ -89,9 +105,11 @@ def update_csv(filename, new_stargazers, spin):
                     'created_at': user_details.get('created_at'),
                     'updated_at': user_details.get('updated_at')
                 })
+            time.sleep(0.1)  # Add small delay to avoid hitting rate limits too hard
         else:
             print("\nError: 'user' is not a dictionary or missing 'login' key")
 
+    print("\nAll user profiles fetched. Updating CSV...")
     # Read existing data and merge
     try:
         with open(filename, mode='r', newline='', encoding='utf-8') as file:
@@ -110,7 +128,7 @@ def update_csv(filename, new_stargazers, spin):
 
     # Write combined data back to CSV, including header
     fieldnames = [
-        'id', 'login', 'name', 'company', 'location', 'email', 'bio',
+        'starred_at', 'id', 'login', 'name', 'company', 'location', 'email', 'bio',
         'twitter_username', 'followers_count', 'following_count',
         'public_repos', 'public_gists', 'blog', 'hireable',
         'created_at', 'updated_at'
@@ -122,7 +140,8 @@ def update_csv(filename, new_stargazers, spin):
 
 def main():
     repo = input("Enter the GitHub repository (format: owner/repo): ")
-    filename = os.path.join("data", f"{repo.replace('/', os.sep)}.csv")  # Store in data subfolder
+    owner, repo_name = repo.split('/')
+    filename = os.path.join("data", owner, f"{repo_name}.csv")  # Create owner/repo.csv structure
     print(f"Fetching stargazers for {repo}, please wait...")
     spin = dot_spinner()  # Create a dot spinner generator
     try:
