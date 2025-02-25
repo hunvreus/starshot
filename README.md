@@ -54,3 +54,21 @@ The script will create a CSV file with the following columns:
 | blog | URL to user's blog/website |
 | created_at | Account creation date |
 | updated_at | Last profile update date |
+
+## Data Visualization
+
+Additional visualization features are available if you install the visualization dependencies:
+
+```bash
+pip install -r requirements-visualize.txt
+```
+
+Then run:
+```bash
+python visualize.py
+```
+
+This will:
+1. Create a cumulative stars growth chart
+2. Generate an interactive world map showing stargazer distribution by country
+3. Save visualizations in `visualizations/owner/repo/`
