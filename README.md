@@ -24,7 +24,7 @@ Simple Python script that creates a CSV with the public GitHub profile info of u
 
 1. Run the script:
    ```bash
-   python shoot.py
+   python export.py
    ```
 
 2. Enter the repository in format `owner/repo` when prompted
