@@ -17,7 +17,11 @@ def get_available_datasets():
         # Convert path to owner/repo format
         parts = path.parts[1:]  # Skip 'data' directory
         if len(parts) >= 2:
-            datasets.append((str(path), '/'.join(parts[:-1])))
+            # Include the repo name (parts[-2] for owner, parts[-1] without .csv for repo)
+            owner = parts[-2]
+            repo = parts[-1].replace('.csv', '')
+            owner_repo = f"{owner}/{repo}"
+            datasets.append((str(path), owner_repo))
     
     return datasets
 
