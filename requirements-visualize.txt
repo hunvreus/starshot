@@ -1,5 +1,0 @@
-folium
-geopy
-matplotlib
-pandas
-pycountry

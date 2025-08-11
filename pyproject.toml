@@ -1,0 +1,23 @@
+[project]
+name = "starshot"
+version = "0.1.0"
+description = "Export GitHub stargazer data to CSV with optional data visualizations including charts and interactive maps"
+requires-python = ">=3.8"
+dependencies = [
+    "requests",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+visualize = [
+    "folium",
+    "geopy", 
+    "matplotlib",
+    "pandas",
+    "pycountry",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+]
