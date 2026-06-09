@@ -274,6 +274,7 @@ async function runSync(run: ClaimedRun) {
 
     if (mode === "smart") {
       await runSmartSync(token, run.sourceId, run.id, source);
+      await refreshProfiles(token, run.sourceId, run.id);
       finishRun(run.id, "success");
       return;
     }
@@ -281,6 +282,7 @@ async function runSync(run: ClaimedRun) {
     await fetchGithubTotal(token, source);
     const entries = await fetchEntries(token, source);
     reconcileMemberships(run.sourceId, run.id, entries, true);
+    await refreshProfiles(token, run.sourceId, run.id);
     finishRun(run.id, "success");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

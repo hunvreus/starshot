@@ -766,7 +766,7 @@ function syncProgressDescription(run: SyncRun | undefined, totalCount: number) {
   if (run.mode === "clear") return "Starshot is deleting the current local source records.";
   if (run.mode === "profiles") return "Starshot is refreshing stale cached GitHub profiles for active members.";
   if (totalCount <= 0) return "Starshot is fetching the source member list from GitHub.";
-  return "Starshot is reconciling source membership and marking missing entries inactive when required.";
+  return "Starshot is reconciling source membership and refreshing stale profile details.";
 }
 
 function syncFailureDescription(run: SyncRun | undefined) {
