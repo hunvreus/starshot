@@ -490,10 +490,11 @@ export function App() {
                 onExportSnapshot={updateExportSnapshot}
               />
             </div>
+          ) : selectedTargetIsRunning ? (
+            <div className="min-h-[calc(100svh-4rem)]" />
           ) : (
             <SourceEmptyState
               hasQuery={false}
-              isRunning={selectedTargetIsRunning}
               onClearQuery={() => undefined}
               onSync={() => void syncSelected("smart")}
             />
@@ -648,12 +649,10 @@ function InitialLoader() {
 
 function SourceEmptyState({
   hasQuery,
-  isRunning,
   onClearQuery,
   onSync
 }: {
   hasQuery: boolean;
-  isRunning: boolean;
   onClearQuery: () => void;
   onSync: () => void;
 }) {
@@ -677,14 +676,14 @@ function SourceEmptyState({
     <div className="grid min-h-[calc(100svh-4rem)] place-items-center p-4">
       <Empty className="max-w-md">
         <EmptyHeader>
-          <EmptyTitle>{isRunning ? "Updating source" : "No data yet"}</EmptyTitle>
+          <EmptyTitle>No data yet</EmptyTitle>
           <EmptyDescription>
-            {isRunning ? "Profiles will appear here as the update completes." : "Run an update to fetch the current audience."}
+            Run an update to fetch the current audience.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button onClick={onSync} disabled={isRunning}>
-            {isRunning ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+          <Button onClick={onSync}>
+            <RefreshCw />
             Update
           </Button>
         </EmptyContent>
