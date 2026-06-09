@@ -1,16 +1,17 @@
-# Data directory
+# Dependencies
+node_modules/
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Local runtime data
 data/
-visualizations/
 
-# Python bytecode
-__pycache__/
-*.py[cod]
-*$py.class
+# Build and tool output
+dist/
+.tmp/
 
-# Virtual environment
-venv/
-
-# Ignore all dot files/folders
-.*
-!.gitignore
-!.env.example
+# OS files
+.DS_Store
