@@ -15,7 +15,7 @@ starshot uses a GitHub OAuth App with minimal scopes for login and GitHub API ac
 ## Data flow
 
 1. Add a source: repository stargazers or user followers.
-2. Start a sync run.
+2. Start an update run.
 3. The server reconciles the GitHub membership list for that source.
 4. Membership rows are inserted, reactivated, or marked removed.
 5. Public user profile metadata is refreshed by separate profile refresh runs.
@@ -25,7 +25,7 @@ starshot uses a GitHub OAuth App with minimal scopes for login and GitHub API ac
 
 Follower and stargazer lists are reconciled as source memberships. A completed full reconciliation marks users missing from the authoritative GitHub list as removed instead of assuming pagination positions are stable.
 
-Sync runs are queued in SQLite. The request creates or returns a `queued`/`running` run and returns immediately. An in-process scheduler claims queued runs up to `SYNC_CONCURRENCY`, defaulting to 4 for local use. If the process restarts mid-sync, stale `running` rows are moved back to `queued` on startup.
+Update runs are queued in SQLite. The request creates or returns a `queued`/`running` run and returns immediately. An in-process scheduler claims queued runs up to `SYNC_CONCURRENCY`, defaulting to 4 for local use. If the process restarts mid-update, stale `running` rows are moved back to `queued` on startup.
 
 Sync runs have four modes: `smart`, `full`, `profiles`, and `clear`. `smart` is the default update mode.
 
@@ -35,9 +35,9 @@ Follower smart sync performs full reconciliation when exact inactive marking is 
 
 The optimized repository update probe scans up to `UPDATE_PROBE_MAX_PAGES` pages and stops after `SYNC_KNOWN_BOUNDARY_COUNT` consecutive known active stargazers when that is enough to prove the delta.
 
-Full sync fetches the complete GitHub list and marks missing active memberships inactive. Clear mode deletes local membership rows for the source without calling GitHub, so the next update rebuilds from GitHub. Profile refresh runs are separate and update stale cached GitHub user profiles with bounded concurrency controlled by `GITHUB_PROFILE_CONCURRENCY`.
+Full sync refreshes source metadata, fetches the complete GitHub list, and marks missing active memberships inactive. Clear mode deletes local membership rows for the source without calling GitHub, so the next update rebuilds from GitHub. Profile refresh runs are separate and update stale cached GitHub user profiles with bounded concurrency controlled by `GITHUB_PROFILE_CONCURRENCY`.
 
-GitHub HTTP concurrency is process-wide. `GITHUB_HTTP_CONCURRENCY` caps total in-flight GitHub requests, defaulting to 20, and `GITHUB_TOKEN_CONCURRENCY` caps in-flight GitHub requests per token. GitHub rate-limit throttling is also token-aware: every GitHub response updates the in-memory budget for that token. Requests slow down below `GITHUB_RATE_LIMIT_SLOW_FLOOR` and pause until reset below `GITHUB_RATE_LIMIT_PAUSE_FLOOR`. The limiter optimistically reserves one remaining request before dispatch, honors `Retry-After` on `403`/`429`, and adds a small reset buffer with jitter. This coordinates simultaneous syncs inside one Node process, but it is not cross-process coordination.
+GitHub HTTP concurrency is process-wide. `GITHUB_HTTP_CONCURRENCY` caps total in-flight GitHub requests, defaulting to 40, and `GITHUB_TOKEN_CONCURRENCY` caps in-flight GitHub requests per token. GitHub rate-limit throttling is also token-aware: every GitHub response updates the in-memory budget for that token. Requests slow down below `GITHUB_RATE_LIMIT_SLOW_FLOOR` and pause until reset below `GITHUB_RATE_LIMIT_PAUSE_FLOOR`. The limiter optimistically reserves one remaining request before dispatch, honors `Retry-After` on `403`/`429`, and adds a small reset buffer with jitter. This coordinates simultaneous update runs inside one Node process, but it is not cross-process coordination.
 
 ## Cache freshness
 
@@ -48,7 +48,7 @@ GitHub HTTP concurrency is process-wide. `GITHUB_HTTP_CONCURRENCY` caps total in
 
 ## Location normalization
 
-Geocoding is optional and controlled by environment variables. The supported provider is OpenStreetMap Nominatim. When enabled, sync stores normalized location text, country, country code, latitude, longitude, and geocode timestamp on each GitHub user. The raw GitHub location remains unchanged.
+Geocoding is optional and controlled by environment variables. The supported provider is OpenStreetMap Nominatim. When enabled, profile refresh stores normalized location text, country, country code, latitude, longitude, and geocode timestamp on each GitHub user. The raw GitHub location remains unchanged.
 
 ## Persistence
 
